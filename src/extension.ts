@@ -30,7 +30,7 @@ function getDirectoryToLookFor(
     if (fileName?.scheme !== "file") {
       return;
     }
-    console.log("fileName", path.dirname(fileName.fsPath));
+
     return path.dirname(fileName.fsPath);
   }
 
@@ -48,15 +48,13 @@ function showGitRootInStatusBar() {
     findGitRoot(directoryToLookFor)
       .then((gitRoot) => {
         const gitRootFolder = gitRoot.split(path.sep).pop();
-        console.log(gitRootFolder);
+
         if (gitRootFolder) {
           updateStatusBarItem(gitRootFolder);
         }
       })
-      .catch((e) => {
-        console.log(`gitRootFolder not found`);
-        console.log(e);
-        // no git root found
+      .catch(() => {
+        // No git root found nothing to do here.
       });
   }
 }
