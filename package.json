@@ -3,6 +3,10 @@
   "displayName": "which-1js",
   "description": "Helps you identify which 1JS folder this vscode instance is for.",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Markionium/which-1js"
+  },
   "engines": {
     "vscode": "^1.75.0"
   },
