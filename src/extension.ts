@@ -2,59 +2,77 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
+import { execa } from "execa";
+import * as path from "path";
 
 let myStatusBarItem: vscode.StatusBarItem;
 export function activate({ subscriptions }: vscode.ExtensionContext) {
-	// create a new status bar item that we can now manage
-	myStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 1000);
+  // create a new status bar item that we can now manage
+  myStatusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    1000
+  );
 
+  vscode.workspace.onDidChangeWorkspaceFolders(() => showGitRootInStatusBar);
+  subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor(showGitRootInStatusBar)
+  );
 
-	// register some listener that make sure the status bar 
-	// item always up-to-date
-	subscriptions.push(vscode.window.onDidChangeActiveTextEditor(updateStatusBarItemForEditor));
-
-	// update status bar item once at start
-	updateStatusBarItemForEditor(vscode.window.activeTextEditor);
-	const openedFolder = vscode.workspace.workspaceFolders?.[0];
-	if (!openedFolder) {
-		return;
-	}
-	const folderBeforeMidgard = getFolderBeforeMidgard(openedFolder?.uri.path);
-	updateStatusBarItem(folderBeforeMidgard);
+  showGitRootInStatusBar();
 }
 
-function getFolderBeforeMidgard(path: string) {
-	const folderParts = path.split("/");
-	const midgardIndex = folderParts.indexOf("midgard");
-	if (midgardIndex !== -1) {
-		return folderParts[midgardIndex - 1];
-	}
-	return null;
+function getDirectoryToLookFor(
+  textEditor: vscode.TextEditor | undefined = vscode.window.activeTextEditor
+): string | undefined {
+  const fileName = textEditor?.document.uri;
+  if (fileName) {
+    if (fileName?.scheme !== "file") {
+      return;
+    }
+    console.log("fileName", path.dirname(fileName.fsPath));
+    return path.dirname(fileName.fsPath);
+  }
 
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+  if (workspaceFolder && workspaceFolder.uri.scheme === "file") {
+    return workspaceFolder.uri.fsPath;
+  }
+  return undefined;
 }
 
-function updateStatusBarItemForEditor(editor: vscode.TextEditor | undefined): void {
-	if (!editor) {
-		return;
-	}
-	const folderBeforeMidgard = getFolderBeforeMidgard(editor.document.uri.path);
+function showGitRootInStatusBar() {
+  const directoryToLookFor = getDirectoryToLookFor();
 
-	if (!folderBeforeMidgard) {
-		myStatusBarItem.hide();
-		return;
-	}
-
-	updateStatusBarItem(folderBeforeMidgard);
+  if (directoryToLookFor) {
+    findGitRoot(directoryToLookFor)
+      .then((gitRoot) => {
+        const gitRootFolder = gitRoot.split(path.sep).pop();
+        console.log(gitRootFolder);
+        if (gitRootFolder) {
+          updateStatusBarItem(gitRootFolder);
+        }
+      })
+      .catch((e) => {
+        console.log(`gitRootFolder not found`);
+        console.log(e);
+        // no git root found
+      });
+  }
 }
 
 function updateStatusBarItem(value: string | null): void {
-	if (!value) {
-		myStatusBarItem.hide();
-		return;
-	}
+  if (!value) {
+    myStatusBarItem.hide();
+    return;
+  }
 
-	myStatusBarItem.text = `${value}`;
-	myStatusBarItem.show();
+  myStatusBarItem.text = `${value}`;
+  myStatusBarItem.show();
+}
+
+function findGitRoot(filePath: string): Promise<string> {
+  return execa("git", ["rev-parse", "--show-toplevel"], {
+    cwd: filePath,
+  }).then(({ stdout }) => stdout);
 }
