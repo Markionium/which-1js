@@ -13,10 +13,16 @@ export function activate({ subscriptions }: vscode.ExtensionContext) {
 
 	// register some listener that make sure the status bar 
 	// item always up-to-date
-	subscriptions.push(vscode.window.onDidChangeActiveTextEditor(updateStatusBarItem));
+	subscriptions.push(vscode.window.onDidChangeActiveTextEditor(updateStatusBarItemForEditor));
 
 	// update status bar item once at start
-	updateStatusBarItem(vscode.window.activeTextEditor);
+	updateStatusBarItemForEditor(vscode.window.activeTextEditor);
+	const openedFolder = vscode.workspace.workspaceFolders?.[0];
+	if (!openedFolder) {
+		return;
+	}
+	const folderBeforeMidgard = getFolderBeforeMidgard(openedFolder?.uri.path);
+	updateStatusBarItem(folderBeforeMidgard);
 }
 
 function getFolderBeforeMidgard(path: string) {
@@ -29,7 +35,7 @@ function getFolderBeforeMidgard(path: string) {
 
 }
 
-function updateStatusBarItem(editor: vscode.TextEditor | undefined): void {
+function updateStatusBarItemForEditor(editor: vscode.TextEditor | undefined): void {
 	if (!editor) {
 		return;
 	}
@@ -40,10 +46,15 @@ function updateStatusBarItem(editor: vscode.TextEditor | undefined): void {
 		return;
 	}
 
-	myStatusBarItem.text = `midgard`;
-	myStatusBarItem.show();
+	updateStatusBarItem(folderBeforeMidgard);
+}
 
+function updateStatusBarItem(value: string | null): void {
+	if (!value) {
+		myStatusBarItem.hide();
+		return;
+	}
 
-	myStatusBarItem.text = `${folderBeforeMidgard}`;
+	myStatusBarItem.text = `${value}`;
 	myStatusBarItem.show();
 }
