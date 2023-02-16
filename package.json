@@ -2,7 +2,7 @@
   "name": "which-1js",
   "displayName": "which-1js",
   "description": "Helps you identify which 1JS folder this vscode instance is for.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/Markionium/which-1js"
@@ -27,7 +27,8 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "publish": "vsce publish"
   },
   "devDependencies": {
     "@types/glob": "^8.0.1",
